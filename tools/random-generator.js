@@ -29,10 +29,13 @@ if(saveButton){
   try{
    function from64(s){return Uint8Array.from(atob(s),function(c){return c.charCodeAt(0)})}
    function to64(a){return btoa(String.fromCharCode.apply(null,new Uint8Array(a)))}
+   if(settings.data.crypto_version!==2)throw Error('version');
    var base=await crypto.subtle.importKey('raw',new TextEncoder().encode(master),'PBKDF2',false,['deriveKey']);
-   var key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:from64(settings.data.kdf_salt),iterations:settings.data.kdf_iterations,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+   var kek=await crypto.subtle.deriveKey({name:'PBKDF2',salt:from64(settings.data.kdf_salt),iterations:settings.data.kdf_iterations,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+   var wrapped=await crypto.subtle.decrypt({name:'AES-GCM',iv:from64(settings.data.master_wrap_iv)},kek,from64(settings.data.master_wrapped_key));
+   var key=await crypto.subtle.importKey('raw',wrapped,{name:'AES-GCM'},false,['encrypt','decrypt']);
    var check=await crypto.subtle.decrypt({name:'AES-GCM',iv:from64(settings.data.check_iv)},key,from64(settings.data.check_ciphertext));
-   if(new TextDecoder().decode(check)!=='TWT vault verification v1')throw Error('unlock');
+   if(new TextDecoder().decode(check)!=='TWT vault verification v2')throw Error('unlock');
    var iv=new Uint8Array(12);crypto.getRandomValues(iv);
    var encrypted=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},key,new TextEncoder().encode(secret));
    var user=session.data.session.user;
