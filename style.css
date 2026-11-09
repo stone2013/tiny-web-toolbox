@@ -34,3 +34,9 @@
 
 /* Hide the auto-detection badge until a timestamp has been entered. */
 .ts-detected:empty{display:none}
+
+/* Selectable time zone */
+.ts-zone-picker{display:flex;align-items:center;gap:8px;padding:5px 9px;border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:12px;white-space:nowrap}
+.ts-zone-select{max-width:190px;min-width:0;border:0;background:transparent;color:var(--text);font:inherit;outline-offset:3px}
+.ts-zone-select:focus-visible{outline:2px solid var(--accent);border-radius:5px}
+@media(max-width:600px){.ts-zone-picker{max-width:190px;white-space:normal;flex-wrap:wrap;justify-content:flex-end}.ts-zone-select{max-width:100%;width:100%;text-align:right}}
