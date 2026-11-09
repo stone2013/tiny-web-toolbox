@@ -14,7 +14,7 @@ A collection of small, useful and privacy-friendly tools that run entirely in yo
 - **Text Tools**: convert letter case, clean whitespace and lines, reverse text, and view live text statistics.
 - **JSON Formatter**: pretty-print, minify and validate JSON with error location details.
 - **Color Converter**: coming soon.
-- **Timestamp Converter**: coming soon.
+- **Timestamp Converter**: convert Unix timestamps and local dates, with seconds/milliseconds detection, UTC, ISO 8601 and relative time.
 
 ## Highlights
 
