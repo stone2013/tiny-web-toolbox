@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark">
+<title>Account | Tiny Web Toolbox</title>
+<link rel="icon" href="../assets/logo.svg"><link rel="stylesheet" href="style.css?v=20261109-8">
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer src="account.js?v=20261109-1"></script>
+<meta name="description" content="Create an account or sign in to Tiny Web Toolbox.">
+<link rel="canonical" href="https://stone2013.github.io/tiny-web-toolbox/account.html">
+</head>
+<body>
+<header class="header"><div class="wrap header-inner"><a class="brand" href="index.html"><img src="assets/logo.svg" alt="">Tiny Web Toolbox</a><div class="actions"><div class="lang"><button type="button" data-lang="en" aria-pressed="true">EN</button><button type="button" data-lang="zh-CN" aria-pressed="false">简中</button></div><a class="gh" href="index.html" data-en="Back to tools" data-zh="返回工具">Back to tools</a></div></div></header>
+<main class="wrap tool-main account-main">
+<a class="back" href="index.html">← <span data-en="All tools" data-zh="全部工具">All tools</span></a>
+<h1 data-en="Your account" data-zh="你的账户">Your account</h1>
+<p class="tool-desc" data-en="Sign in to sync your tool history and access your encrypted password vault." data-zh="登录后同步工具使用历史，并访问加密密码库。">Sign in to sync your tool history and access your encrypted password vault.</p>
+<section class="panel account-panel" id="auth-panel">
+<div class="account-tabs"><button type="button" class="chip" id="show-login" aria-pressed="true" data-en="Sign in" data-zh="登录">Sign in</button><button type="button" class="chip" id="show-signup" aria-pressed="false" data-en="Create account" data-zh="注册账户">Create account</button></div>
+<form id="auth-form">
+<label class="field"><span data-en="Email" data-zh="邮箱">Email</span><input class="account-input" id="email" type="email" autocomplete="email" required placeholder="you@example.com"></label>
+<label class="field"><span data-en="Password" data-zh="密码">Password</span><input class="account-input" id="password" type="password" autocomplete="current-password" minlength="8" required placeholder="At least 8 characters"></label>
+<button class="random-generate account-submit" id="auth-submit" type="submit" data-en="Sign in" data-zh="登录">Sign in</button>
+</form>
+<p class="account-status" id="auth-status" role="status" aria-live="polite"></p>
+<p class="hint" data-en="New accounts require email verification. Check your inbox after signing up." data-zh="新账户需要验证邮箱。注册后请查收验证邮件。">New accounts require email verification. Check your inbox after signing up.</p>
+</section>
+<section class="panel account-panel hidden" id="user-panel">
+<div class="account-user-head"><div><span class="tag" data-en="SIGNED IN" data-zh="已登录">SIGNED IN</span><h2 id="user-email"></h2></div><button type="button" class="chip" id="sign-out" data-en="Sign out" data-zh="退出登录">Sign out</button></div>
+<div class="account-section"><h2 data-en="Synced tool history" data-zh="已同步的工具历史">Synced tool history</h2><p class="hint" data-en="Only tool names and timestamps are stored. Tool inputs and generated values are not uploaded." data-zh="只保存工具名称和使用时间，不会上传工具输入内容或生成结果。">Only tool names and timestamps are stored. Tool inputs and generated values are not uploaded.</p><div id="history-list" class="account-history"></div></div>
+<div class="account-section"><h2 data-en="Password vault" data-zh="密码库">Password vault</h2><p class="hint" data-en="The encrypted vault will be added in the next step. Passwords are not saved automatically." data-zh="加密密码库将在下一阶段接入。生成的密码不会自动保存。">The encrypted vault will be added in the next step. Passwords are not saved automatically.</p></div>
+<p class="account-status" id="user-status" role="status" aria-live="polite"></p>
+</section>
+<p class="hint account-footnote" data-en="Use a unique password. Never share your account password or database credentials." data-zh="请使用独立密码。不要分享账户密码或数据库凭据。">Use a unique password. Never share your account password or database credentials.</p>
+</main>
+<footer class="footer"><div class="wrap">© <span class="year"></span> Tiny Web Toolbox · MIT</div></footer>
+</body></html>
