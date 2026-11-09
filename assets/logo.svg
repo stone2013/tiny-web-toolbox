@@ -1,1 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#2F6F6A"/><path d="M17 25h30v23H17zM23 25v-7h18v7M25 34h14M25 41h14" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Tiny Web Toolbox">
+  <rect width="64" height="64" rx="15" fill="#2F6F6A"/>
+  <g fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 25h40v29H12z"/>
+    <path d="M21 25v-11h22v11"/>
+    <path d="M12 35h40"/>
+    <path d="M27 35v5h10v-5"/>
+  </g>
+</svg>
