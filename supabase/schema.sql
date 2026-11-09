@@ -23,6 +23,17 @@ create table if not exists public.vault_settings (
   updated_at timestamptz not null default now()
 );
 
+-- Version 2 envelope encryption: a random data key is wrapped by the master password and recovery code.
+alter table public.vault_settings alter column kdf_salt drop not null;
+alter table public.vault_settings alter column check_iv drop not null;
+alter table public.vault_settings alter column check_ciphertext drop not null;
+alter table public.vault_settings add column if not exists master_wrap_iv text;
+alter table public.vault_settings add column if not exists master_wrapped_key text;
+alter table public.vault_settings add column if not exists recovery_salt text;
+alter table public.vault_settings add column if not exists recovery_wrap_iv text;
+alter table public.vault_settings add column if not exists recovery_wrapped_key text;
+alter table public.vault_settings add column if not exists crypto_version integer not null default 1;
+
 create table if not exists public.vault_items (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
