@@ -4,7 +4,7 @@ A collection of small, useful and privacy-friendly tools that run entirely in yo
 
 ## Tools
 - **Base Converter**: binary, octal, decimal and hexadecimal, including large and negative integers.
-- **Text Tools**: coming soon.
+- **Text Tools**: case conversion, whitespace cleanup, line cleanup, text reversal and live statistics.
 - **JSON Formatter**: coming soon.
 - **Color Converter**: coming soon.
 - **Timestamp Converter**: coming soon.
