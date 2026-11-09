@@ -1,1 +1,37 @@
-<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Color Converter · Tiny Web Toolbox</title><link rel="stylesheet" href="../style.css"><body><header class="header"><div class="wrap header-inner"><a class="brand" href="../index.html">Tiny Web Toolbox</a></div></header><main class="wrap tool-main"><a class="back" href="../index.html">← All tools</a><h1>Color Converter / 颜色转换器</h1><p class="tool-desc">Coming soon · 即将推出</p></main></body>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark">
+<meta name="description" content="Convert HEX, RGB and HSL colors with a live preview. Runs locally in your browser.">
+<title>Color Converter · Tiny Web Toolbox</title><link rel="icon" href="../assets/logo.svg"><link rel="stylesheet" href="../style.css?v=20261109-6">
+<script defer src="color-converter.js?v=20261109-1"></script>
+</head>
+<body>
+<header class="header"><div class="wrap header-inner"><a class="brand" href="../index.html"><img src="../assets/logo.svg" alt="">Tiny Web Toolbox</a><div class="actions"><div class="lang"><button type="button" data-lang="en" aria-pressed="true">EN</button><button type="button" data-lang="zh-CN" aria-pressed="false">简中</button></div><a class="gh" href="https://github.com/stone2013/tiny-web-toolbox">GitHub</a></div></div></header>
+<main class="wrap tool-main">
+<a class="back" href="../index.html">← <span data-en="All tools" data-zh="全部工具">All tools</span></a>
+<h1 data-en="Color Converter" data-zh="颜色转换器">Color Converter</h1>
+<p class="tool-desc" data-en="Convert between HEX, RGB and HSL. Pick a color and preview it instantly." data-zh="在 HEX、RGB 和 HSL 之间转换颜色，支持取色和实时预览。">Convert between HEX, RGB and HSL. Pick a color and preview it instantly.</p>
+<section class="panel color-panel">
+<div class="color-preview-wrap"><div class="color-preview" id="color-preview" aria-label="Color preview"></div><div class="color-preview-meta"><span class="color-kicker" data-en="LIVE PREVIEW" data-zh="实时预览">LIVE PREVIEW</span><strong id="preview-hex">#2F6F6A</strong><span class="color-muted" data-en="Preview updates as you edit" data-zh="编辑时实时更新预览">Preview updates as you edit</span></div><label class="picker-label" for="native-picker"><span data-en="Pick a color" data-zh="选择颜色">Pick a color</span><input type="color" id="native-picker" value="#2f6f6a" aria-label="Choose color"></label></div>
+<div class="color-field">
+<div class="color-field-head"><label for="hex-input" data-en="HEX" data-zh="十六进制 HEX">HEX</label><span>#RRGGBB</span></div>
+<div class="color-input-row"><input class="color-input" id="hex-input" value="#2F6F6A" autocomplete="off" spellcheck="false" aria-describedby="hex-error"><button class="copy color-copy" data-copy="hex-output" data-en="Copy" data-zh="复制">Copy</button></div><p class="color-error" id="hex-error" aria-live="polite"></p>
+</div>
+<div class="color-field">
+<div class="color-field-head"><label data-en="RGB" data-zh="RGB">RGB</label><span>0–255</span></div>
+<div class="color-triplet"><label><span>R</span><input class="color-input component-input" id="rgb-r" inputmode="numeric" value="47" aria-label="Red"></label><label><span>G</span><input class="color-input component-input" id="rgb-g" inputmode="numeric" value="111" aria-label="Green"></label><label><span>B</span><input class="color-input component-input" id="rgb-b" inputmode="numeric" value="106" aria-label="Blue"></label></div>
+<p class="color-error" id="rgb-error" aria-live="polite"></p><div class="color-copy-line"><code id="rgb-output">rgb(47, 111, 106)</code><button class="copy color-copy" data-copy="rgb-output" data-en="Copy" data-zh="复制">Copy</button></div>
+</div>
+<div class="color-field">
+<div class="color-field-head"><label data-en="HSL" data-zh="HSL">HSL</label><span>H: 0–360 · S/L: 0–100%</span></div>
+<div class="color-triplet"><label><span>H</span><input class="color-input component-input" id="hsl-h" inputmode="decimal" value="176" aria-label="Hue"></label><label><span>S %</span><input class="color-input component-input" id="hsl-s" inputmode="decimal" value="40" aria-label="Saturation"></label><label><span>L %</span><input class="color-input component-input" id="hsl-l" inputmode="decimal" value="31" aria-label="Lightness"></label></div>
+<p class="color-error" id="hsl-error" aria-live="polite"></p><div class="color-copy-line"><code id="hsl-output">hsl(176, 40%, 31%)</code><button class="copy color-copy" data-copy="hsl-output" data-en="Copy" data-zh="复制">Copy</button></div>
+</div>
+<div class="color-bottom"><p class="color-status" id="color-status" role="status" aria-live="polite" data-en="Ready. Edit any value to convert." data-zh="准备就绪。编辑任意数值即可转换。">Ready. Edit any value to convert.</p><button class="clear" id="color-reset" data-en="Reset color" data-zh="恢复默认颜色">Reset color</button></div>
+<p class="color-note" data-en="Supports 3/4/6/8-digit HEX, RGB and HSL. Alpha values in HEX are preserved when editing HEX; RGB and HSL outputs use the opaque color." data-zh="支持 3/4/6/8 位 HEX、RGB 和 HSL。编辑 HEX 时保留透明度；RGB 和 HSL 输出使用不透明颜色。">Supports 3/4/6/8-digit HEX, RGB and HSL. Alpha values in HEX are preserved when editing HEX; RGB and HSL outputs use the opaque color.</p>
+</section>
+<p class="hint" data-en="Privacy: all conversions happen locally. Nothing is uploaded." data-zh="隐私说明：所有转换均在本地完成，不会上传任何内容。">Privacy: all conversions happen locally. Nothing is uploaded.</p>
+</main>
+<footer class="footer"><div class="wrap">© <span class="year"></span> Tiny Web Toolbox · MIT</div></footer>
+</body></html>
