@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://stone2013.github.io/tiny-web-toolbox/sitemap.xml
