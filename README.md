@@ -12,7 +12,7 @@ A collection of small, useful and privacy-friendly tools that run entirely in yo
 
 - **Base Converter**: convert between binary, octal, decimal and hexadecimal, including large and negative integers.
 - **Text Tools**: convert letter case, clean whitespace and lines, reverse text, and view live text statistics.
-- **JSON Formatter**: coming soon.
+- **JSON Formatter**: pretty-print, minify and validate JSON with error location details.
 - **Color Converter**: coming soon.
 - **Timestamp Converter**: coming soon.
 
