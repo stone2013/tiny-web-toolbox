@@ -15,13 +15,15 @@ function optimizeSvg(source,removeWhite){
   var fill=(tag.match(/\bfill="([^"]+)"/)||[])[1]||'#000';
   var d=(tag.match(/\bd="([^"]*)"/)||[])[1]||'';
   var opacity=(tag.match(/\bopacity="([^"]+)"/)||[])[1]||'1';
+  var stroke=(tag.match(/\bstroke="([^"]+)"/)||[])[1]||'none';
+  var strokeWidth=(tag.match(/\bstroke-width="([^"]+)"/)||[])[1]||'1';
   var rgb=fill.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
   if(removeWhite&&rgb&&Number(rgb[1])>=245&&Number(rgb[2])>=245&&Number(rgb[3])>=245)return;
-  var key=fill+'|'+opacity;
-  if(!groups[key])groups[key]={fill:fill,opacity:opacity,paths:[]};
+  var key=[fill,opacity,stroke,strokeWidth].join('|');
+  if(!groups[key])groups[key]={fill:fill,opacity:opacity,stroke:stroke,strokeWidth:strokeWidth,paths:[]};
   if(d)groups[key].paths.push(d);
  });
- var body=Object.keys(groups).map(function(key){var g=groups[key];return '<path fill="'+g.fill+'" opacity="'+g.opacity+'" d="'+g.paths.join(' ')+'"/>'}).join('');
+ var body=Object.keys(groups).map(function(key){var g=groups[key];return '<path fill="'+g.fill+'" opacity="'+g.opacity+'" stroke="'+g.stroke+'" stroke-width="'+g.strokeWidth+'" d="'+g.paths.join(' ')+'"/>'}).join('');
  var view=(source.match(/viewBox="([^"]+)"/)||[])[1]||'0 0 512 512';
  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="'+view+'">'+body+'</svg>';
 }
