@@ -200,7 +200,7 @@ convert.addEventListener('click',function(){
     }catch(error){setProgress(100,'progressFail',false);setStatus(t('failed'));convert.disabled=false;reset.disabled=false}
    };
    worker.onerror=function(){if(activeWorker===worker)activeWorker=null;URL.revokeObjectURL(worker._blobUrl);setProgress(100,'progressFail',false);setStatus(t('failed'));convert.disabled=false;reset.disabled=false};
-   worker.postMessage({pixels:data.data.buffer,width:outW,height:outH,style:preset.value,colors:Number(colors.value),tolerance:Number(simplify.value)},[data.data.buffer]);
+   worker.postMessage({pixels:data.data.buffer,width:outW,height:outH,style:preset.value,colors:Number(colors.value)},[data.data.buffer]);
   }catch(error){
    if(worker){worker.terminate();URL.revokeObjectURL(worker._blobUrl)}
    activeWorker=null;setProgress(100,'progressFail',false);setStatus(t('failed'));convert.disabled=false;reset.disabled=false;
