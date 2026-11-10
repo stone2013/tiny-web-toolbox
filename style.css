@@ -88,3 +88,6 @@
 .vector-check small,.vector-note{font-size:12px;line-height:1.5;color:var(--muted)}
 .vector-note{padding:10px 12px;border-left:3px solid var(--accent);background:var(--accentsoft);border-radius:0 8px 8px 0;margin:12px 0}
 .vector-stats{padding:11px 13px;margin:12px 0;border:1px solid var(--border);border-radius:9px;background:var(--surface2);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+.vector-simplify-settings{grid-template-columns:minmax(0,1fr);max-width:calc(50% - 7px);margin-top:0;padding-top:0}
+@media(max-width:600px){.vector-simplify-settings{max-width:100%}}
