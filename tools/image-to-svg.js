@@ -95,14 +95,15 @@ function medianFilter3x3(imgData){
   a.sort(function(x,y){return x-y});
   return a[4];
  }
+ var rs=new Array(9),gs=new Array(9),bs=new Array(9);
  for(var y=0;y<h;y++){
   for(var x=0;x<w;x++){
-   var p=(y*w+x)*4,rs=[],gs=[],bs=[];
+   var p=(y*w+x)*4,k=0;
    for(var oy=-1;oy<=1;oy++){
     var yy=Math.max(0,Math.min(h-1,y+oy));
     for(var ox=-1;ox<=1;ox++){
      var xx=Math.max(0,Math.min(w-1,x+ox)),q=(yy*w+xx)*4;
-     rs.push(src[q]);gs.push(src[q+1]);bs.push(src[q+2]);
+     rs[k]=src[q];gs[k]=src[q+1];bs[k]=src[q+2];k++;
     }
    }
    dst[p]=median9(rs);dst[p+1]=median9(gs);dst[p+2]=median9(bs);dst[p+3]=src[p+3];
