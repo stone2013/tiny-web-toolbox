@@ -140,7 +140,7 @@ function createTraceWorker(){
   countSvgNodes.toString(),
   "var workerGetOptions="+workerGetOptions.toString()+";",
   "self.onmessage=function(event){try{var p=event.data;var imageData={width:p.width,height:p.height,data:new Uint8ClampedArray(p.pixels)};var raw=ImageTracer.imagedataToSVG(imageData,workerGetOptions(p.style,p.colors));if(!raw||raw.length<80)throw new Error('empty');var cleaned=removeInvisiblePaths(raw);var simplified=simplifySvgPaths(cleaned.svg,p.tolerance);var baseSize=new Blob([cleaned.svg]).size;var candidateSize=new Blob([simplified.svg]).size;var finalSvg=candidateSize<baseSize?simplified.svg:cleaned.svg;self.postMessage({ok:true,svg:finalSvg,beforeNodes:countSvgNodes(cleaned.svg),afterNodes:countSvgNodes(finalSvg),removedInvisible:cleaned.removed});}catch(error){self.postMessage({ok:false,error:String(error&&error.message||error)});}};"
- ].join("\\n");
+ ].join("\n");
  var blob=new Blob([source],{type:'text/javascript'});
  var url=URL.createObjectURL(blob);
  var worker=new Worker(url);
