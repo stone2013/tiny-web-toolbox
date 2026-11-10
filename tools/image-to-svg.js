@@ -1,38 +1,68 @@
 (function(){
 'use strict';
 var lang=localStorage.getItem('twt:lang')||(navigator.language&&navigator.language.toLowerCase().startsWith('zh')?'zh-CN':'en');
-var dict={en:{bad:'Choose a PNG, JPG or WebP image.',large:'This image is larger than 12 MB.',library:'The vectorization library could not load. Refresh and try again.',loading:'Loading image…',working:'Tracing image into vector paths…',done:'SVG created. You can preview or download it.',failed:'Could not convert this image. Try a smaller image or lower detail.',none:'Choose an image first.',copied:'SVG code copied.',copyFail:'Could not copy SVG code.',size:'{w} × {h} · {size}',remove:'Choose an image to begin.',optimized:'Optimized SVG · {paths} color layers · {size}',largeSvg:'The SVG is still large. Try Cartoon preset or fewer colors.'},'zh-CN':{bad:'请选择 PNG、JPG 或 WebP 图片。',large:'图片超过 12 MB，请选择较小的文件。',library:'矢量化工具库加载失败，请刷新页面重试。',loading:'正在读取图片…',working:'正在将图片描摹为矢量路径…',done:'SVG 已生成，可以预览或下载。',failed:'转换失败，请尝试较小的图片或降低细节。',none:'请先选择图片。',copied:'SVG 代码已复制。',copyFail:'无法复制 SVG 代码。',size:'{w} × {h} · {size}',remove:'选择图片以开始。',optimized:'优化后 SVG · {paths} 个颜色图层 · {size}',largeSvg:'SVG 仍然较大，可以尝试卡通预设或减少颜色。'}};
+var dict={
+en:{bad:'Choose a PNG, JPG or WebP image.',large:'This image is larger than 12 MB.',library:'The vectorization library could not load. Refresh and try again.',loading:'Loading image…',working:'Tracing image into vector paths…',done:'SVG created. Review the preview and file size before downloading.',failed:'Could not convert this image. Try a smaller image or another style.',none:'Choose an image first.',copied:'SVG code copied.',copyFail:'Could not copy SVG code.',size:'{w} × {h} · {size}',remove:'Choose an image to begin.',stats:'{size} · {paths} paths · {w} × {h}',background:'Removed {count} background pixels.',largeSvg:'Large SVG: try Cartoon mode, fewer colors, or a simpler source image.',copyFallback:'Select and copy the SVG code manually from the downloaded file.'},
+'zh-CN':{bad:'请选择 PNG、JPG 或 WebP 图片。',large:'图片超过 12 MB，请选择较小的文件。',library:'矢量化工具库加载失败，请刷新页面重试。',loading:'正在读取图片…',working:'正在将图片描摹为矢量路径…',done:'SVG 已生成，请检查预览和文件大小后再下载。',failed:'转换失败，请尝试较小的图片或更换图像类型。',none:'请先选择图片。',copied:'SVG 代码已复制。',copyFail:'无法复制 SVG 代码。',size:'{w} × {h} · {size}',remove:'选择图片以开始。',stats:'{size} · {paths} 条路径 · {w} × {h}',background:'已移除 {count} 个背景像素。',largeSvg:'SVG 仍然较大：试试卡通模式、减少颜色或换用更简单的原图。',copyFallback:'复制失败，可以下载 SVG 文件后手动复制源码。'}
+};
 function t(k,v){var s=dict[lang][k]||dict.en[k]||k;Object.keys(v||{}).forEach(function(x){s=s.replace('{'+x+'}',v[x])});return s}
-var input=document.getElementById('vector-file'),meta=document.getElementById('vector-meta'),colors=document.getElementById('vector-colors'),detail=document.getElementById('vector-detail'),preset=document.getElementById('vector-preset'),removeBg=document.getElementById('vector-remove-bg'),sizeInfo=document.getElementById('vector-size'),convert=document.getElementById('vector-convert'),reset=document.getElementById('vector-reset'),results=document.getElementById('vector-results'),original=document.getElementById('vector-original'),output=document.getElementById('vector-output'),downloadBtn=document.getElementById('vector-download'),copyBtn=document.getElementById('vector-copy'),status=document.getElementById('vector-status');
-var file=null,image=null,svgText='',objectUrl='';
+var input=document.getElementById('vector-file'),meta=document.getElementById('vector-meta'),preset=document.getElementById('vector-preset'),colors=document.getElementById('vector-colors'),removeBg=document.getElementById('vector-remove-bg'),convert=document.getElementById('vector-convert'),reset=document.getElementById('vector-reset'),results=document.getElementById('vector-results'),original=document.getElementById('vector-original'),output=document.getElementById('vector-output'),stats=document.getElementById('vector-stats'),downloadBtn=document.getElementById('vector-download'),copyBtn=document.getElementById('vector-copy'),status=document.getElementById('vector-status');
+var file=null,image=null,svgText='',sourceUrl='';
 function setStatus(s){status.textContent=s}
-function bytes(n){return n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(1)+' MB'}
+function bytes(n){return n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(2)+' MB'}
 function apply(){document.documentElement.lang=lang;document.querySelectorAll('[data-en][data-zh]').forEach(function(e){e.textContent=e.dataset[lang==='zh-CN'?'zh':'en']});document.querySelectorAll('[data-lang]').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.lang===lang?'true':'false')})}
 document.querySelectorAll('[data-lang]').forEach(function(b){b.addEventListener('click',function(){lang=b.dataset.lang;localStorage.setItem('twt:lang',lang);apply()})});
-function optimizeSvg(source,removeWhite){
- var groups={},matches=source.match(/<path\b[^>]*\/>/g)||[];
- matches.forEach(function(tag){
-  var fill=(tag.match(/\bfill="([^"]+)"/)||[])[1]||'#000';
-  var d=(tag.match(/\bd="([^"]*)"/)||[])[1]||'';
-  var opacity=(tag.match(/\bopacity="([^"]+)"/)||[])[1]||'1';
-  var stroke=(tag.match(/\bstroke="([^"]+)"/)||[])[1]||'none';
-  var strokeWidth=(tag.match(/\bstroke-width="([^"]+)"/)||[])[1]||'1';
-  var rgb=fill.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
-  if(removeWhite&&rgb&&Number(rgb[1])>=245&&Number(rgb[2])>=245&&Number(rgb[3])>=245)return;
-  var key=[fill,opacity,stroke,strokeWidth].join('|');
-  if(!groups[key])groups[key]={fill:fill,opacity:opacity,stroke:stroke,strokeWidth:strokeWidth,paths:[]};
-  if(d)groups[key].paths.push(d);
- });
- var body=Object.keys(groups).map(function(key){var g=groups[key];return '<path fill="'+g.fill+'" opacity="'+g.opacity+'" stroke="'+g.stroke+'" stroke-width="'+g.strokeWidth+'" d="'+g.paths.join(' ')+'"/>'}).join('');
- var view=(source.match(/viewBox="([^"]+)"/)||[])[1]||'0 0 512 512';
- return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="'+view+'">'+body+'</svg>';
+function clearResult(){svgText='';results.hidden=true;stats.hidden=true;stats.textContent='';downloadBtn.disabled=true;copyBtn.disabled=true;output.innerHTML=''}
+function isLightBackground(d,i){var r=d[i],g=d[i+1],b=d[i+2],hi=Math.max(r,g,b),lo=Math.min(r,g,b);return d[i+3]>8&&lo>=218&&hi>=232&&(hi-lo)<=48}
+function removeEdgeBackground(imgData){
+ var d=imgData.data,w=imgData.width,h=imgData.height,total=w*h,queue=new Int32Array(total),head=0,tail=0;
+ function add(i){if(i<0||i>=total||d[i*4+3]===0||!isLightBackground(d,i*4))return;d[i*4+3]=0;queue[tail++]=i}
+ for(var x=0;x<w;x++){add(x);add((h-1)*w+x)}
+ for(var y=1;y<h-1;y++){add(y*w);add(y*w+w-1)}
+ while(head<tail){var p=queue[head++],x=p%w;
+ if(x>0)add(p-1);if(x<w-1)add(p+1);if(p>=w)add(p-w);if(p+w<total)add(p+w)}
+ return tail;
 }
-function clearResult(){svgText='';sizeInfo.textContent='';results.hidden=true;downloadBtn.disabled=true;copyBtn.disabled=true;output.innerHTML='';}
-input.addEventListener('change',function(){var f=input.files&&input.files[0];if(!f)return;clearResult();if(!/^image\/(png|jpeg|webp)$/.test(f.type)&&! /\.(png|jpe?g|webp)$/i.test(f.name)){setStatus(t('bad'));input.value='';return}if(f.size>12*1024*1024){setStatus(t('large'));input.value='';return}file=f;setStatus(t('loading'));var url=URL.createObjectURL(f),img=new Image();img.onload=function(){image=img;meta.textContent=t('size',{w:img.naturalWidth,h:img.naturalHeight,size:bytes(f.size)});original.innerHTML='';var thumb=document.createElement('img');thumb.src=url;thumb.alt=f.name;original.appendChild(thumb);convert.disabled=false;reset.disabled=false;setStatus('')};img.onerror=function(){URL.revokeObjectURL(url);file=null;image=null;setStatus(t('bad'))};img.src=url;});
-reset.addEventListener('click',function(){if(objectUrl){URL.revokeObjectURL(objectUrl);objectUrl=''}file=null;image=null;input.value='';meta.textContent='';original.innerHTML='';clearResult();convert.disabled=true;reset.disabled=true;setStatus(t('remove'))});
-convert.addEventListener('click',function(){if(!image){setStatus(t('none'));return}if(!window.ImageTracer){setStatus(t('library'));return}convert.disabled=true;downloadBtn.disabled=true;copyBtn.disabled=true;setStatus(t('working'));setTimeout(function(){try{var max=1600,w=image.naturalWidth,h=image.naturalHeight,ratio=Math.min(1,max/Math.max(w,h));var canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(w*ratio));canvas.height=Math.max(1,Math.round(h*ratio));var ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(image,0,0,canvas.width,canvas.height);var data=ctx.getImageData(0,0,canvas.width,canvas.height);var d=detail.value,cartoon=preset.value==='cartoon',opts={numberofcolors:cartoon?Math.min(Number(colors.value),16):Number(colors.value),colorsampling:2,colorquantcycles:cartoon?4:3,ltres:cartoon?(d==='low'?2.8:d==='high'?1.2:2):d==='low'?2.2:d==='high'?0.7:1.2,qtres:cartoon?(d==='low'?3.2:d==='high'?1.5:2.5):d==='low'?2.5:d==='high'?0.8:1.3,pathomit:cartoon?(d==='low'?24:d==='high'?8:16):(d==='low'?18:d==='high'?3:9),rightangleenhance:true,scale:1,roundcoords:1,viewbox:true,desc:false,blurradius:cartoon?1:0,blurdelta:cartoon?32:20};svgText=ImageTracer.imagedataToSVG(data,opts);svgText=optimizeSvg(svgText,removeBg.checked);canvas.width=0;canvas.height=0;if(!svgText||svgText.length<100)throw Error('empty');var blob=new Blob([svgText],{type:'image/svg+xml;charset=utf-8'});if(objectUrl)URL.revokeObjectURL(objectUrl);objectUrl=URL.createObjectURL(blob);output.innerHTML='';var svgImg=document.createElement('img');svgImg.src=objectUrl;svgImg.alt='Vectorized SVG preview';output.appendChild(svgImg);results.hidden=false;downloadBtn.disabled=false;copyBtn.disabled=false;var kb=(new Blob([svgText]).size/1024).toFixed(1)+' KB',pathCount=(svgText.match(/<path\b/g)||[]).length;sizeInfo.textContent=t('optimized',{paths:pathCount,size:kb});if(new Blob([svgText]).size>2*1024*1024)setStatus(t('largeSvg'));else setStatus(t('done'))}catch(e){setStatus(t('failed'))}finally{convert.disabled=false}},30)});
+function getOptions(){
+ var style=preset.value,n=Number(colors.value);
+ if(style==='cartoon')return {ltres:1.8,qtres:2,pathomit:22,rightangleenhance:false,colorsampling:2,numberofcolors:Math.min(n,16),colorquantcycles:2,strokewidth:0,linefilter:true,scale:1,roundcoords:1,viewbox:true,desc:false,blurradius:0,blurdelta:20};
+ if(style==='logo')return {ltres:1.5,qtres:1.6,pathomit:28,rightangleenhance:true,colorsampling:2,numberofcolors:Math.min(n,16),colorquantcycles:2,strokewidth:0,linefilter:true,scale:1,roundcoords:1,viewbox:true,desc:false,blurradius:0,blurdelta:20};
+ return {ltres:1,qtres:1,pathomit:10,rightangleenhance:false,colorsampling:2,numberofcolors:Math.max(16,n),colorquantcycles:3,strokewidth:0,linefilter:false,scale:1,roundcoords:1,viewbox:true,desc:false,blurradius:0,blurdelta:20};
+}
+input.addEventListener('change',function(){
+ var f=input.files&&input.files[0];if(!f)return;clearResult();
+ if(!/^image\/(png|jpeg|webp)$/.test(f.type)&&!/\.(png|jpe?g|webp)$/i.test(f.name)){setStatus(t('bad'));input.value='';return}
+ if(f.size>12*1024*1024){setStatus(t('large'));input.value='';return}
+ if(sourceUrl)URL.revokeObjectURL(sourceUrl);file=f;image=null;setStatus(t('loading'));sourceUrl=URL.createObjectURL(f);
+ var img=new Image();img.onload=function(){image=img;meta.textContent=t('size',{w:img.naturalWidth,h:img.naturalHeight,size:bytes(f.size)});original.innerHTML='';var thumb=document.createElement('img');thumb.src=sourceUrl;thumb.alt=f.name;original.appendChild(thumb);convert.disabled=false;reset.disabled=false;setStatus('')};
+ img.onerror=function(){file=null;image=null;setStatus(t('bad'))};img.src=sourceUrl;
+});
+reset.addEventListener('click',function(){if(sourceUrl){URL.revokeObjectURL(sourceUrl);sourceUrl=''}file=null;image=null;input.value='';meta.textContent='';original.innerHTML='';clearResult();convert.disabled=true;reset.disabled=true;setStatus(t('remove'))});
+convert.addEventListener('click',function(){
+ if(!image){setStatus(t('none'));return}if(!window.ImageTracer){setStatus(t('library'));return}
+ convert.disabled=true;downloadBtn.disabled=true;copyBtn.disabled=true;setStatus(t('working'));
+ setTimeout(function(){try{
+  var max=1000,w=image.naturalWidth,h=image.naturalHeight,ratio=Math.min(1,max/Math.max(w,h));
+  var canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(w*ratio));canvas.height=Math.max(1,Math.round(h*ratio));
+  var ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0,canvas.width,canvas.height);
+  var data=ctx.getImageData(0,0,canvas.width,canvas.height),removed=removeBg.checked?removeEdgeBackground(data):0;
+  var svgTextRaw=ImageTracer.imagedataToSVG(data,getOptions());canvas.width=0;canvas.height=0;
+  if(!svgTextRaw||svgTextRaw.length<80)throw Error('empty');
+  svgText=svgTextRaw.replace(/<\?xml[^>]*>\s*/i,'');
+  var blob=new Blob([svgText],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(blob);
+  output.innerHTML='';var svgImg=document.createElement('img');svgImg.src=url;svgImg.alt='Vectorized SVG preview';output.appendChild(svgImg);
+  results.hidden=false;var pathCount=(svgText.match(/<path\b/gi)||[]).length;
+  stats.textContent=t('stats',{size:bytes(blob.size),paths:pathCount.toLocaleString(),w:canvas.width||Math.round(w*ratio),h:Math.round(h*ratio)});
+  stats.hidden=false;downloadBtn.disabled=false;copyBtn.disabled=false;setStatus(removed?t('done')+' '+t('background',{count:removed.toLocaleString()}):t('done'));
+  if(blob.size>2*1024*1024)setStatus(status.textContent+' '+t('largeSvg'));
+ }catch(e){setStatus(t('failed'))}finally{convert.disabled=false}},30);
+});
 downloadBtn.addEventListener('click',function(){if(!svgText)return;var blob=new Blob([svgText],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=(file?file.name.replace(/\.[^.]+$/,''):'image')+'.svg';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},30000)});
-copyBtn.addEventListener('click',async function(){if(!svgText)return;try{await navigator.clipboard.writeText(svgText);setStatus(t('copied'))}catch(e){setStatus(t('copyFail'))}});
+copyBtn.addEventListener('click',async function(){
+ if(!svgText)return;
+ try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(svgText)}else{throw Error('clipboard')}setStatus(t('copied'))}
+ catch(e){var area=document.createElement('textarea');area.value=svgText;area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();var ok=false;try{ok=document.execCommand('copy')}catch(ignore){}area.remove();setStatus(ok?t('copied'):t('copyFail')+' '+t('copyFallback'))}
+});
 document.querySelector('.year').textContent=new Date().getFullYear();
 try{var ids=JSON.parse(localStorage.getItem('twt:recent')||'[]');ids=['image-svg'].concat(ids.filter(function(x){return x!=='image-svg'})).slice(0,3);localStorage.setItem('twt:recent',JSON.stringify(ids))}catch(e){}
 apply();
