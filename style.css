@@ -79,3 +79,12 @@
 @media(max-width:600px){.vector-panel{padding:17px}.vector-settings,.vector-results{grid-template-columns:1fr}.vector-preview{min-height:180px}.vector-actions button,.vector-downloads button{flex:1 1 100%;min-height:42px}}
 
 .vector-check{display:flex;align-items:center;gap:9px;margin:10px 0 4px;color:var(--muted);font-size:13px}.vector-check input{width:17px;height:17px;accent-color:var(--accent)}.vector-size{min-height:18px;margin:10px 0 0;color:var(--muted);font:12px var(--mono);overflow-wrap:anywhere}
+
+/* Image to SVG optimization controls */
+.vector-check{display:flex;align-items:flex-start;gap:10px;margin:16px 0;padding:13px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);cursor:pointer}
+.vector-check input{width:18px;height:18px;margin:2px 0 0;accent-color:var(--accent);flex:0 0 auto}
+.vector-check span{display:flex;flex-direction:column;gap:3px}
+.vector-check strong{font-size:13px}
+.vector-check small,.vector-note{font-size:12px;line-height:1.5;color:var(--muted)}
+.vector-note{padding:10px 12px;border-left:3px solid var(--accent);background:var(--accentsoft);border-radius:0 8px 8px 0;margin:12px 0}
+.vector-stats{padding:11px 13px;margin:12px 0;border:1px solid var(--border);border-radius:9px;background:var(--surface2);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
