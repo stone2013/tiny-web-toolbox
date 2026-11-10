@@ -91,3 +91,13 @@
 
 .vector-simplify-settings{grid-template-columns:minmax(0,1fr);max-width:calc(50% - 7px);margin-top:0;padding-top:0}
 @media(max-width:600px){.vector-simplify-settings{max-width:100%}}
+
+
+/* SVG generation progress */
+.vector-progress-wrap{margin:12px 0 16px;padding:12px 13px;border:1px solid var(--border);border-radius:10px;background:var(--surface2)}
+.vector-progress-track{height:8px;width:100%;overflow:hidden;border-radius:99px;background:var(--border)}
+.vector-progress-bar{display:block;width:0;height:100%;border-radius:99px;background:var(--accent);transition:width .25s ease}
+.vector-progress-track.is-indeterminate .vector-progress-bar{width:34%;animation:vector-progress-slide 1.15s ease-in-out infinite}
+.vector-progress-text{margin-top:8px;color:var(--muted);font-size:12px;line-height:1.4}
+@keyframes vector-progress-slide{0%{transform:translateX(-110%)}100%{transform:translateX(310%)}}
+@media(prefers-reduced-motion:reduce){.vector-progress-bar{transition:none}.vector-progress-track.is-indeterminate .vector-progress-bar{animation:none;transform:translateX(100%)}}
