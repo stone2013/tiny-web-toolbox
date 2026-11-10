@@ -87,7 +87,7 @@ function simplifySvgPaths(source,tolerance){
  });
  return {svg:result,before:before,after:after};
 }
-function clearResult(){if(activeWorker){activeWorker.terminate();activeWorker=null}svgText='';if(resultUrl){URL.revokeObjectURL(resultUrl);resultUrl=''}results.hidden=true;stats.hidden=true;stats.textContent='';downloadBtn.disabled=true;copyBtn.disabled=true;output.innerHTML='';var wrap=document.getElementById('vector-progress-wrap');if(wrap)wrap.hidden=true;progressMessageKey=''}
+function clearResult(){if(activeWorker){activeWorker.terminate();if(activeWorker._blobUrl)URL.revokeObjectURL(activeWorker._blobUrl);activeWorker=null}svgText='';if(resultUrl){URL.revokeObjectURL(resultUrl);resultUrl=''}results.hidden=true;stats.hidden=true;stats.textContent='';downloadBtn.disabled=true;copyBtn.disabled=true;output.innerHTML='';var wrap=document.getElementById('vector-progress-wrap');if(wrap)wrap.hidden=true;progressMessageKey=''}
 function isLightBackground(d,i){var r=d[i],g=d[i+1],b=d[i+2],hi=Math.max(r,g,b),lo=Math.min(r,g,b);return d[i+3]>8&&lo>=218&&hi>=232&&(hi-lo)<=48}
 function removeEdgeBackground(imgData){
  var d=imgData.data,w=imgData.width,h=imgData.height,total=w*h,queue=new Int32Array(total),head=0,tail=0;
