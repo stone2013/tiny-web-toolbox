@@ -89,6 +89,72 @@ function simplifySvgPaths(source,tolerance){
 }
 function clearResult(){if(activeWorker){activeWorker.terminate();if(activeWorker._blobUrl)URL.revokeObjectURL(activeWorker._blobUrl);activeWorker=null}svgText='';if(resultUrl){URL.revokeObjectURL(resultUrl);resultUrl=''}results.hidden=true;stats.hidden=true;stats.textContent='';downloadBtn.disabled=true;copyBtn.disabled=true;output.innerHTML='';var wrap=document.getElementById('vector-progress-wrap');if(wrap)wrap.hidden=true;progressMessageKey=''}
 function isLightBackground(d,i){var r=d[i],g=d[i+1],b=d[i+2],hi=Math.max(r,g,b),lo=Math.min(r,g,b);return d[i+3]>8&&lo>=218&&hi>=232&&(hi-lo)<=48}
+function quantizeCartoonColors(imgData,maxColors){
+ var d=imgData.data,w=imgData.width,h=imgData.height,total=w*h,hist=new Map();
+ for(var p=0;p<total;p++){
+  var i=p*4;if(d[i+3]<8)continue;
+  var r=d[i]>>3,g=d[i+1]>>3,b=d[i+2]>>3,key=(r<<10)|(g<<5)|b;
+  var item=hist.get(key);if(item)item.count++;else hist.set(key,{key:key,count:1,r:r*8+4,g:g*8+4,b:b*8+4});
+ }
+ var bins=Array.from(hist.values());
+ if(!bins.length)return;
+ var boxes=[bins];
+ function range(box,axis){var lo=255,hi=0;for(var z=0;z<box.length;z++){var v=box[z][axis];if(v<lo)lo=v;if(v>hi)hi=v}return hi-lo}
+ while(boxes.length<maxColors){
+  var best=-1,bestScore=-1,bestAxis='r';
+  for(var bi=0;bi<boxes.length;bi++){
+   var box=boxes[bi];if(box.length<2)continue;
+   var axes=['r','g','b'],axis=axes[0],span=range(box,axis);
+   for(var ai=1;ai<3;ai++){var rr=range(box,axes[ai]);if(rr>span){span=rr;axis=axes[ai]}}
+   var score=span*Math.log(1+box.reduce(function(sum,x){return sum+x.count},0));
+   if(score>bestScore){bestScore=score;best=bi;bestAxis=axis}
+  }
+  if(best<0)break;
+  var chosen=boxes.splice(best,1)[0].slice().sort(function(a,b){return a[bestAxis]-b[bestAxis]});
+  var totalWeight=chosen.reduce(function(sum,x){return sum+x.count},0),acc=0,split=1;
+  for(;split<chosen.length;split++){acc+=chosen[split-1].count;if(acc>=totalWeight/2)break}
+  boxes.push(chosen.slice(0,split),chosen.slice(split));
+ }
+ var palette=boxes.map(function(box){
+  var weight=0,r=0,g=0,b=0;
+  box.forEach(function(x){weight+=x.count;r+=x.r*x.count;g+=x.g*x.count;b+=x.b*x.count});
+  return {r:r/weight,g:g/weight,b:b/weight};
+ });
+ var lookup=new Int16Array(32768);
+ hist.forEach(function(item,key){
+  var best=0,dist=Infinity;
+  for(var c=0;c<palette.length;c++){var dr=item.r-palette[c].r,dg=item.g-palette[c].g,db=item.b-palette[c].b,dd=dr*dr+dg*dg+db*db;if(dd<dist){dist=dd;best=c}}
+  lookup[key]=best;
+ });
+ var labels=new Int16Array(total);
+ for(var p2=0;p2<total;p2++){
+  var q=p2*4;if(d[q+3]<8){labels[p2]=-1;continue}
+  var k=((d[q]>>3)<<10)|((d[q+1]>>3)<<5)|(d[q+2]>>3),id=lookup[k],c0=palette[id];
+  labels[p2]=id;d[q]=Math.round(c0.r);d[q+1]=Math.round(c0.g);d[q+2]=Math.round(c0.b);
+ }
+ // Replace tiny isolated color islands with the most common neighboring palette color.
+ var seen=new Uint8Array(total),queue=new Int32Array(total),minArea=5;
+ for(var start=0;start<total;start++){
+  if(seen[start]||labels[start]<0)continue;
+  var color=labels[start],head=0,tail=0;queue[tail++]=start;seen[start]=1;
+  while(head<tail){
+   var cur=queue[head++],x=cur%w;
+   if(x>0&& !seen[cur-1]&&labels[cur-1]===color){seen[cur-1]=1;queue[tail++]=cur-1}
+   if(x<w-1&& !seen[cur+1]&&labels[cur+1]===color){seen[cur+1]=1;queue[tail++]=cur+1}
+   if(cur>=w&& !seen[cur-w]&&labels[cur-w]===color){seen[cur-w]=1;queue[tail++]=cur-w}
+   if(cur+w<total&& !seen[cur+w]&&labels[cur+w]===color){seen[cur+w]=1;queue[tail++]=cur+w}
+  }
+  if(tail<minArea){
+   var votes=new Int32Array(palette.length);
+   for(var z=0;z<tail;z++){
+    var at=queue[z],xx=at%w,neighbors=[xx>0?at-1:-1,xx<w-1?at+1:-1,at>=w?at-w:-1,at+w<total?at+w:-1];
+    for(var ni=0;ni<4;ni++){var np=neighbors[ni];if(np>=0&&labels[np]>=0&&labels[np]!==color)votes[labels[np]]++}
+   }
+   var replacement=color,maxVotes=0;for(var vi=0;vi<votes.length;vi++)if(votes[vi]>maxVotes){maxVotes=votes[vi];replacement=vi}
+   if(maxVotes)for(var z2=0;z2<tail;z2++){var pos=queue[z2],pix=pos*4,pc=palette[replacement];labels[pos]=replacement;d[pix]=Math.round(pc.r);d[pix+1]=Math.round(pc.g);d[pix+2]=Math.round(pc.b)}
+  }
+ }
+}
 function removeEdgeBackground(imgData){
  var d=imgData.data,w=imgData.width,h=imgData.height,total=w*h,queue=new Int32Array(total),head=0,tail=0;
  function add(i){if(i<0||i>=total||d[i*4+3]===0||!isLightBackground(d,i*4))return;d[i*4+3]=0;queue[tail++]=i}
@@ -157,7 +223,7 @@ convert.addEventListener('click',function(){
    var max=1000,w=image.naturalWidth,h=image.naturalHeight,ratio=Math.min(1,max/Math.max(w,h));
    var canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(w*ratio));canvas.height=Math.max(1,Math.round(h*ratio));
    var ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0,canvas.width,canvas.height);
-   var outW=canvas.width,outH=canvas.height,data=ctx.getImageData(0,0,outW,outH);var removed=removeBg.checked?removeEdgeBackground(data):0;
+   var outW=canvas.width,outH=canvas.height,data=ctx.getImageData(0,0,outW,outH);var removed=removeBg.checked?removeEdgeBackground(data):0;if(preset.value==='cartoon')quantizeCartoonColors(data,8);
    canvas.width=0;canvas.height=0;
    setProgress(28,'progressTrace',true);
    worker=createTraceWorker();activeWorker=worker;
