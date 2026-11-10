@@ -7,12 +7,12 @@ en:{bad:'Choose a PNG, JPG or WebP image.',large:'This image is larger than 12 M
 };
 function t(k,v){var s=dict[lang][k]||dict.en[k]||k;Object.keys(v||{}).forEach(function(x){s=s.replace('{'+x+'}',v[x])});return s}
 var input=document.getElementById('vector-file'),meta=document.getElementById('vector-meta'),preset=document.getElementById('vector-preset'),colors=document.getElementById('vector-colors'),removeBg=document.getElementById('vector-remove-bg'),convert=document.getElementById('vector-convert'),reset=document.getElementById('vector-reset'),results=document.getElementById('vector-results'),original=document.getElementById('vector-original'),output=document.getElementById('vector-output'),stats=document.getElementById('vector-stats'),downloadBtn=document.getElementById('vector-download'),copyBtn=document.getElementById('vector-copy'),status=document.getElementById('vector-status');
-var file=null,image=null,svgText='',sourceUrl='';
+var file=null,image=null,svgText='',sourceUrl='',resultUrl='';
 function setStatus(s){status.textContent=s}
 function bytes(n){return n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(2)+' MB'}
 function apply(){document.documentElement.lang=lang;document.querySelectorAll('[data-en][data-zh]').forEach(function(e){e.textContent=e.dataset[lang==='zh-CN'?'zh':'en']});document.querySelectorAll('[data-lang]').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.lang===lang?'true':'false')})}
 document.querySelectorAll('[data-lang]').forEach(function(b){b.addEventListener('click',function(){lang=b.dataset.lang;localStorage.setItem('twt:lang',lang);apply()})});
-function clearResult(){svgText='';results.hidden=true;stats.hidden=true;stats.textContent='';downloadBtn.disabled=true;copyBtn.disabled=true;output.innerHTML=''}
+function clearResult(){svgText='';if(resultUrl){URL.revokeObjectURL(resultUrl);resultUrl=''}results.hidden=true;stats.hidden=true;stats.textContent='';downloadBtn.disabled=true;copyBtn.disabled=true;output.innerHTML=''}
 function isLightBackground(d,i){var r=d[i],g=d[i+1],b=d[i+2],hi=Math.max(r,g,b),lo=Math.min(r,g,b);return d[i+3]>8&&lo>=218&&hi>=232&&(hi-lo)<=48}
 function removeEdgeBackground(imgData){
  var d=imgData.data,w=imgData.width,h=imgData.height,total=w*h,queue=new Int32Array(total),head=0,tail=0;
@@ -45,14 +45,14 @@ convert.addEventListener('click',function(){
   var max=1000,w=image.naturalWidth,h=image.naturalHeight,ratio=Math.min(1,max/Math.max(w,h));
   var canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(w*ratio));canvas.height=Math.max(1,Math.round(h*ratio));
   var ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0,canvas.width,canvas.height);
-  var data=ctx.getImageData(0,0,canvas.width,canvas.height),removed=removeBg.checked?removeEdgeBackground(data):0;
+  var outW=canvas.width,outH=canvas.height,data=ctx.getImageData(0,0,outW,outH),removed=removeBg.checked?removeEdgeBackground(data):0;
   var svgTextRaw=ImageTracer.imagedataToSVG(data,getOptions());canvas.width=0;canvas.height=0;
   if(!svgTextRaw||svgTextRaw.length<80)throw Error('empty');
   svgText=svgTextRaw.replace(/<\?xml[^>]*>\s*/i,'');
-  var blob=new Blob([svgText],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(blob);
-  output.innerHTML='';var svgImg=document.createElement('img');svgImg.src=url;svgImg.alt='Vectorized SVG preview';output.appendChild(svgImg);
+  var blob=new Blob([svgText],{type:'image/svg+xml;charset=utf-8'});if(resultUrl)URL.revokeObjectURL(resultUrl);resultUrl=URL.createObjectURL(blob);
+  output.innerHTML='';var svgImg=document.createElement('img');svgImg.src=resultUrl;svgImg.alt='Vectorized SVG preview';output.appendChild(svgImg);
   results.hidden=false;var pathCount=(svgText.match(/<path\b/gi)||[]).length;
-  stats.textContent=t('stats',{size:bytes(blob.size),paths:pathCount.toLocaleString(),w:canvas.width||Math.round(w*ratio),h:Math.round(h*ratio)});
+  stats.textContent=t('stats',{size:bytes(blob.size),paths:pathCount.toLocaleString(),w:outW,h:outH});
   stats.hidden=false;downloadBtn.disabled=false;copyBtn.disabled=false;setStatus(removed?t('done')+' '+t('background',{count:removed.toLocaleString()}):t('done'));
   if(blob.size>2*1024*1024)setStatus(status.textContent+' '+t('largeSvg'));
  }catch(e){setStatus(t('failed'))}finally{convert.disabled=false}},30);
