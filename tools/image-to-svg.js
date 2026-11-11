@@ -167,7 +167,7 @@ convert.addEventListener('click',function(){
      finishProgress();convert.disabled=false;reset.disabled=false;
     }catch(error){setProgress(100,'progressFail',false);setStatus(t('failed'));convert.disabled=false;reset.disabled=false}
    };
-   worker.onerror=function(){if(activeWorker===worker)activeWorker=null;URL.revokeObjectURL(worker._blobUrl);setProgress(100,'progressFail',false);setStatus(t('failed'));convert.disabled=false;reset.disabled=false};
+   worker.onerror=function(){if(activeWorker===worker)activeWorker=null;if(worker._blobUrl)URL.revokeObjectURL(worker._blobUrl);setProgress(100,'progressFail',false);setStatus(t('failed'));convert.disabled=false;reset.disabled=false};
    worker.postMessage({pixels:data.data.buffer,width:outW,height:outH,detail:detail.value,colors:Number(colors.value)},[data.data.buffer]);
   }catch(error){
    if(worker){worker.terminate();if(worker._blobUrl)URL.revokeObjectURL(worker._blobUrl)}
