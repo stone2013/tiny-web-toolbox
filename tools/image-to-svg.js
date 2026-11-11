@@ -6,7 +6,7 @@ en:{bad:'Choose a PNG, JPG or WebP image.',large:'This image is larger than 12 M
 'zh-CN':{bad:'请选择 PNG、JPG 或 WebP 图片。',large:'图片超过 12 MB，请选择较小的文件。',library:'矢量化工具库加载失败，请刷新页面重试。',loading:'正在读取图片…',working:'正在将图片描摹为矢量路径…',done:'SVG 已生成，请检查预览和文件大小后再下载。',failed:'转换失败，请尝试较小的图片或更换图像类型。',none:'请先选择图片。',copied:'SVG 代码已复制。',copyFail:'无法复制 SVG 代码。',size:'{w} × {h} · {size}',remove:'选择图片以开始。',stats:'{size} · {paths} 条路径 · {nodes} 个节点 · {w} × {h}',background:'已移除 {count} 个背景像素。',invisible:'已清除 {count} 条不可见路径。',largeSvg:'SVG 仍然较大：试试卡通模式、减少颜色或换用更简单的原图。',progressPrep:'正在准备图片…',progressTrace:'正在描摹图像…',progressFinish:'正在优化 SVG…',progressDone:'转换完成',progressFail:'转换失败',copyFallback:'复制失败，可以下载 SVG 文件后手动复制源码。'}
 };
 function t(k,v){var s=dict[lang][k]||dict.en[k]||k;Object.keys(v||{}).forEach(function(x){s=s.replace('{'+x+'}',v[x])});return s}
-var input=document.getElementById('vector-file'),meta=document.getElementById('vector-meta'),preset=document.getElementById('vector-preset'),colors=document.getElementById('vector-colors'),removeBg=document.getElementById('vector-remove-bg'),simplify=document.getElementById('vector-simplify'),convert=document.getElementById('vector-convert'),reset=document.getElementById('vector-reset'),results=document.getElementById('vector-results'),original=document.getElementById('vector-original'),output=document.getElementById('vector-output'),stats=document.getElementById('vector-stats'),downloadBtn=document.getElementById('vector-download'),copyBtn=document.getElementById('vector-copy'),status=document.getElementById('vector-status');
+var input=document.getElementById('vector-file'),meta=document.getElementById('vector-meta'),colors=document.getElementById('vector-colors'),detail=document.getElementById('vector-detail'),convert=document.getElementById('vector-convert'),reset=document.getElementById('vector-reset'),results=document.getElementById('vector-results'),original=document.getElementById('vector-original'),output=document.getElementById('vector-output'),stats=document.getElementById('vector-stats'),downloadBtn=document.getElementById('vector-download'),copyBtn=document.getElementById('vector-copy'),status=document.getElementById('vector-status');
 var file=null,image=null,svgText='',sourceUrl='',resultUrl='',activeWorker=null,progressMessageKey='';
 function setStatus(s){status.textContent=s}
 function setProgress(value,key,indeterminate){
@@ -127,17 +127,13 @@ input.addEventListener('change',function(){
 });
 reset.addEventListener('click',function(){if(sourceUrl){URL.revokeObjectURL(sourceUrl);sourceUrl=''}file=null;image=null;input.value='';meta.textContent='';original.innerHTML='';clearResult();convert.disabled=true;reset.disabled=true;setStatus(t('remove'))});
 function createTraceWorker(){
- var workerGetOptions=function(style,n){
-  if(style==='cartoon')return {ltres:1.8,qtres:2,pathomit:22,rightangleenhance:false,colorsampling:2,numberofcolors:Math.min(n,16),colorquantcycles:2,strokewidth:0,linefilter:true,scale:1,roundcoords:1,viewbox:true,desc:false,blurradius:0,blurdelta:20};
-  if(style==='logo')return {ltres:1.5,qtres:1.6,pathomit:28,rightangleenhance:true,colorsampling:2,numberofcolors:Math.min(n,16),colorquantcycles:2,strokewidth:0,linefilter:true,scale:1,roundcoords:1,viewbox:true,desc:false,blurradius:0,blurdelta:20};
-  return {ltres:1,qtres:1,pathomit:10,rightangleenhance:false,colorsampling:2,numberofcolors:Math.max(16,n),colorquantcycles:3,strokewidth:0,linefilter:false,scale:1,roundcoords:1,viewbox:true,desc:false,blurradius:0,blurdelta:20};
+ var workerGetOptions=function(d,n){
+  return {numberofcolors:n,colorsampling:2,colorquantcycles:3,ltres:d==='low'?1.8:d==='high'?0.7:1.1,qtres:d==='low'?2:d==='high'?0.7:1.1,pathomit:d==='low'?12:d==='high'?2:6,rightangleenhance:true,scale:1,roundcoords:1,viewbox:true,desc:false,blurradius:0,blurdelta:20};
  };
  var source=[
   "importScripts('https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/imagetracer_v1.2.6.js');",
-  removeInvisiblePaths.toString(),
-  countSvgNodes.toString(),
   "var workerGetOptions="+workerGetOptions.toString()+";",
-  "self.onmessage=function(event){try{var p=event.data;var imageData={width:p.width,height:p.height,data:new Uint8ClampedArray(p.pixels)};var raw=ImageTracer.imagedataToSVG(imageData,workerGetOptions(p.style,p.colors));if(!raw||raw.length<80)throw new Error('empty');var cleaned=removeInvisiblePaths(raw);self.postMessage({ok:true,svg:cleaned.svg,beforeNodes:countSvgNodes(cleaned.svg),afterNodes:countSvgNodes(cleaned.svg),removedInvisible:cleaned.removed});}catch(error){self.postMessage({ok:false,error:String(error&&error.message||error)});}};"
+  "self.onmessage=function(event){try{var p=event.data;var imageData={width:p.width,height:p.height,data:new Uint8ClampedArray(p.pixels)};var svg=ImageTracer.imagedataToSVG(imageData,workerGetOptions(p.detail,p.colors));if(!svg||svg.length<100)throw new Error('empty');self.postMessage({ok:true,svg:svg});}catch(error){self.postMessage({ok:false,error:String(error&&error.message||error)});}};"
  ].join("\n");
  var blob=new Blob([source],{type:'text/javascript'});
  var url=URL.createObjectURL(blob);
@@ -154,10 +150,10 @@ convert.addEventListener('click',function(){
  setTimeout(function(){
   var worker=null;
   try{
-   var max=1000,w=image.naturalWidth,h=image.naturalHeight,ratio=Math.min(1,max/Math.max(w,h));
+   var max=1600,w=image.naturalWidth,h=image.naturalHeight,ratio=Math.min(1,max/Math.max(w,h));
    var canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(w*ratio));canvas.height=Math.max(1,Math.round(h*ratio));
    var ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0,canvas.width,canvas.height);
-   var outW=canvas.width,outH=canvas.height,data=ctx.getImageData(0,0,outW,outH);var removed=removeBg.checked?removeEdgeBackground(data):0;
+   var outW=canvas.width,outH=canvas.height,data=ctx.getImageData(0,0,outW,outH);
    canvas.width=0;canvas.height=0;
    setProgress(28,'progressTrace',true);
    worker=createTraceWorker();activeWorker=worker;
@@ -167,19 +163,17 @@ convert.addEventListener('click',function(){
     try{
      var result=event.data;if(!result.ok)throw new Error(result.error||'worker');
      setProgress(92,'progressFinish',false);
-     svgText=result.svg.replace(/<\\?xml[^>]*>\\s*/i,'');
+     svgText=result.svg;
      var blob=new Blob([svgText],{type:'image/svg+xml;charset=utf-8'});if(resultUrl)URL.revokeObjectURL(resultUrl);resultUrl=URL.createObjectURL(blob);
      output.innerHTML='';var svgImg=document.createElement('img');svgImg.src=resultUrl;svgImg.alt='Vectorized SVG preview';output.appendChild(svgImg);
-     results.hidden=false;var pathCount=(svgText.match(/<path\\b/gi)||[]).length;
-     stats.textContent=t('stats',{size:bytes(blob.size),paths:pathCount.toLocaleString(),nodes:result.beforeNodes.toLocaleString()+' → '+result.afterNodes.toLocaleString(),w:outW,h:outH});
-     stats.hidden=false;downloadBtn.disabled=false;copyBtn.disabled=false;
-     var message=t('done');if(result.removedInvisible)message+=' '+t('invisible',{count:result.removedInvisible.toLocaleString()});if(removed)message+=' '+t('background',{count:removed.toLocaleString()});setStatus(message);
+     results.hidden=false;stats.textContent=bytes(blob.size)+' · '+outW+' × '+outH;
+     stats.hidden=false;downloadBtn.disabled=false;copyBtn.disabled=false;setStatus(t('done'));
      if(blob.size>2*1024*1024)setStatus(status.textContent+' '+t('largeSvg'));
      finishProgress();convert.disabled=false;reset.disabled=false;
     }catch(error){setProgress(100,'progressFail',false);setStatus(t('failed'));convert.disabled=false;reset.disabled=false}
    };
    worker.onerror=function(){if(activeWorker===worker)activeWorker=null;URL.revokeObjectURL(worker._blobUrl);setProgress(100,'progressFail',false);setStatus(t('failed'));convert.disabled=false;reset.disabled=false};
-   worker.postMessage({pixels:data.data.buffer,width:outW,height:outH,style:preset.value,colors:Number(colors.value)},[data.data.buffer]);
+   worker.postMessage({pixels:data.data.buffer,width:outW,height:outH,detail:detail.value,colors:Number(colors.value)},[data.data.buffer]);
   }catch(error){
    if(worker){worker.terminate();URL.revokeObjectURL(worker._blobUrl)}
    activeWorker=null;setProgress(100,'progressFail',false);setStatus(t('failed'));convert.disabled=false;reset.disabled=false;
