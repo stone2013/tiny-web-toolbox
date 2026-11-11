@@ -1,0 +1,57 @@
+name: Build VTracer WebAssembly
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths:
+      - ".github/workflows/build-vtracer.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Tiny Web Toolbox
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check out VTracer source
+        uses: actions/checkout@v4
+        with:
+          repository: visioncortex/vtracer
+          ref: 1.0.0-alpha.4
+          path: vtracer-source
+
+      - name: Install Rust and wasm target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        uses: taiki-e/install-action@wasm-pack
+
+      - name: Build browser WebAssembly package
+        working-directory: vtracer-source/nodejs
+        run: wasm-pack build --release --target web --out-dir pkg
+
+      - name: Copy browser package into Pages assets
+        run: |
+          mkdir -p assets/vtracer
+          cp vtracer-source/nodejs/pkg/vtracer_wasm.js assets/vtracer/
+          cp vtracer-source/nodejs/pkg/vtracer_wasm_bg.wasm assets/vtracer/
+
+      - name: Commit generated WebAssembly assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/vtracer/vtracer_wasm.js assets/vtracer/vtracer_wasm_bg.wasm
+          if git diff --cached --quiet; then
+            echo "No WebAssembly asset changes."
+          else
+            git commit -m "Build VTracer browser WebAssembly assets"
+            git push
+          fi
