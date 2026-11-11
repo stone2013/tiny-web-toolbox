@@ -2,11 +2,11 @@
 'use strict';
 var lang=localStorage.getItem('twt:lang')||(navigator.language&&navigator.language.toLowerCase().startsWith('zh')?'zh-CN':'en');
 var dict={
-en:{bad:'Choose a PNG, JPG or WebP image.',large:'This image is larger than 12 MB.',library:'The vectorization library could not load. Refresh and try again.',loading:'Loading image…',working:'Tracing image into vector paths…',done:'SVG created. Review the preview and file size before downloading.',failed:'Could not convert this image. Try a smaller image or another style.',none:'Choose an image first.',copied:'SVG code copied.',copyFail:'Could not copy SVG code.',size:'{w} × {h} · {size}',remove:'Choose an image to begin.',stats:'{size} · {paths} paths · {nodes} nodes · {w} × {h}',background:'Removed {count} background pixels.',invisible:'Removed {count} invisible paths.',largeSvg:'Large SVG: try Cartoon mode, fewer colors, or a simpler source image.',progressPrep:'Preparing image…',progressTrace:'Tracing image…',progressFinish:'Optimizing SVG…',progressDone:'Conversion complete',progressFail:'Conversion failed',copyFallback:'Select and copy the SVG code manually from the downloaded file.'},
-'zh-CN':{bad:'请选择 PNG、JPG 或 WebP 图片。',large:'图片超过 12 MB，请选择较小的文件。',library:'矢量化工具库加载失败，请刷新页面重试。',loading:'正在读取图片…',working:'正在将图片描摹为矢量路径…',done:'SVG 已生成，请检查预览和文件大小后再下载。',failed:'转换失败，请尝试较小的图片或更换图像类型。',none:'请先选择图片。',copied:'SVG 代码已复制。',copyFail:'无法复制 SVG 代码。',size:'{w} × {h} · {size}',remove:'选择图片以开始。',stats:'{size} · {paths} 条路径 · {nodes} 个节点 · {w} × {h}',background:'已移除 {count} 个背景像素。',invisible:'已清除 {count} 条不可见路径。',largeSvg:'SVG 仍然较大：试试卡通模式、减少颜色或换用更简单的原图。',progressPrep:'正在准备图片…',progressTrace:'正在描摹图像…',progressFinish:'正在优化 SVG…',progressDone:'转换完成',progressFail:'转换失败',copyFallback:'复制失败，可以下载 SVG 文件后手动复制源码。'}
+en:{bad:'Choose a PNG, JPG or WebP image.',large:'This image is larger than 12 MB.',library:'The vectorization library could not load. Refresh and try again.',loading:'Loading image…',working:'Tracing image into vector paths…',done:'SVG created. Review the preview and file size before downloading.',failed:'Could not convert this image. Try a smaller image or another style.',none:'Choose an image first.',copied:'SVG code copied.',copyFail:'Could not copy SVG code.',size:'{w} × {h} · {size}',remove:'Choose an image to begin.',stats:'{size} · {paths} paths · {nodes} nodes · {w} × {h}',background:'Removed {count} background pixels.',invisible:'Removed {count} invisible paths.',largeSvg:'Large SVG: try Cartoon mode, fewer colors, or a simpler source image.',progressPrep:'Preparing image…',progressTrace:'Tracing image…',progressFinish:'Optimizing SVG…',progressDone:'Conversion complete',progressFail:'Conversion failed',copyFallback:'Select and copy the SVG code manually from the downloaded file.',normalizeLabel:'Color normalization (experimental)',normalizeHint:'Merge similar colors before tracing. Compare with the original mode.',normalizeDone:'Color normalization applied.'},
+'zh-CN':{bad:'请选择 PNG、JPG 或 WebP 图片。',large:'图片超过 12 MB，请选择较小的文件。',library:'矢量化工具库加载失败，请刷新页面重试。',loading:'正在读取图片…',working:'正在将图片描摹为矢量路径…',done:'SVG 已生成，请检查预览和文件大小后再下载。',failed:'转换失败，请尝试较小的图片或更换图像类型。',none:'请先选择图片。',copied:'SVG 代码已复制。',copyFail:'无法复制 SVG 代码。',size:'{w} × {h} · {size}',remove:'选择图片以开始。',stats:'{size} · {paths} 条路径 · {nodes} 个节点 · {w} × {h}',background:'已移除 {count} 个背景像素。',invisible:'已清除 {count} 条不可见路径。',largeSvg:'SVG 仍然较大：试试卡通模式、减少颜色或换用更简单的原图。',progressPrep:'正在准备图片…',progressTrace:'正在描摹图像…',progressFinish:'正在优化 SVG…',progressDone:'转换完成',progressFail:'转换失败',copyFallback:'复制失败，可以下载 SVG 文件后手动复制源码。',normalizeLabel:'颜色归一化（实验）',normalizeHint:'描摹前合并相近颜色。可与原始模式对比。',normalizeDone:'已应用颜色归一化。'}
 };
 function t(k,v){var s=dict[lang][k]||dict.en[k]||k;Object.keys(v||{}).forEach(function(x){s=s.replace('{'+x+'}',v[x])});return s}
-var input=document.getElementById('vector-file'),meta=document.getElementById('vector-meta'),colors=document.getElementById('vector-colors'),detail=document.getElementById('vector-detail'),convert=document.getElementById('vector-convert'),reset=document.getElementById('vector-reset'),results=document.getElementById('vector-results'),original=document.getElementById('vector-original'),output=document.getElementById('vector-output'),stats=document.getElementById('vector-stats'),downloadBtn=document.getElementById('vector-download'),copyBtn=document.getElementById('vector-copy'),status=document.getElementById('vector-status');
+var input=document.getElementById('vector-file'),meta=document.getElementById('vector-meta'),colors=document.getElementById('vector-colors'),detail=document.getElementById('vector-detail'),normalize=document.getElementById('vector-normalize'),convert=document.getElementById('vector-convert'),reset=document.getElementById('vector-reset'),results=document.getElementById('vector-results'),original=document.getElementById('vector-original'),output=document.getElementById('vector-output'),stats=document.getElementById('vector-stats'),downloadBtn=document.getElementById('vector-download'),copyBtn=document.getElementById('vector-copy'),status=document.getElementById('vector-status');
 var file=null,image=null,svgText='',sourceUrl='',resultUrl='',activeWorker=null,progressMessageKey='';
 function setStatus(s){status.textContent=s}
 function setProgress(value,key,indeterminate){
@@ -130,10 +130,51 @@ function createTraceWorker(){
  var workerGetOptions=function(d,n){
   return {numberofcolors:n,colorsampling:2,colorquantcycles:3,ltres:d==='low'?1.8:d==='high'?0.7:1.1,qtres:d==='low'?2:d==='high'?0.7:1.1,pathomit:d==='low'?12:d==='high'?2:6,rightangleenhance:true,scale:1,roundcoords:1,viewbox:true,desc:false,blurradius:0,blurdelta:20};
  };
+ var normalizeColorsSource=function normalizeColors(imageData,maxColors){
+ var d=imageData.data,total=d.length/4,hist=new Map();
+ for(var p=0;p<total;p++){
+  var i=p*4;if(d[i+3]<8)continue;
+  var r=d[i]>>3,g=d[i+1]>>3,b=d[i+2]>>3,key=(r<<10)|(g<<5)|b;
+  var item=hist.get(key);if(item)item.count++;else hist.set(key,{r:r*8+4,g:g*8+4,b:b*8+4,count:1});
+ }
+ var boxes=[Array.from(hist.values())];
+ function span(box,k){var lo=255,hi=0;for(var i=0;i<box.length;i++){var v=box[i][k];if(v<lo)lo=v;if(v>hi)hi=v}return hi-lo}
+ while(boxes.length<maxColors){
+  var bi=-1,bscore=-1,baxis='r';
+  for(var j=0;j<boxes.length;j++){
+   var box=boxes[j];if(box.length<2)continue;
+   var axis='r',range=span(box,axis);
+   ['g','b'].forEach(function(k){var x=span(box,k);if(x>range){range=x;axis=k}});
+   var weight=box.reduce(function(a,x){return a+x.count},0),score=range*Math.log(1+weight);
+   if(score>bscore){bscore=score;bi=j;baxis=axis}
+  }
+  if(bi<0)break;
+  var part=boxes.splice(bi,1)[0].slice().sort(function(a,b){return a[baxis]-b[baxis]});
+  var sum=0,weight=part.reduce(function(a,x){return a+x.count},0),cut=1;
+  for(;cut<part.length;cut++){sum+=part[cut-1].count;if(sum>=weight/2)break}
+  boxes.push(part.slice(0,cut),part.slice(cut));
+ }
+ var palette=boxes.map(function(box){
+  var n=0,r=0,g=0,b=0;box.forEach(function(x){n+=x.count;r+=x.r*x.count;g+=x.g*x.count;b+=x.b*x.count});
+  return {r:r/n,g:g/n,b:b/n};
+ });
+ var lookup=new Int16Array(32768);
+ hist.forEach(function(x,key){
+  var best=0,dist=Infinity;
+  for(var c=0;c<palette.length;c++){var dr=x.r-palette[c].r,dg=x.g-palette[c].g,db=x.b-palette[c].b,dd=dr*dr+dg*dg+db*db;if(dd<dist){dist=dd;best=c}}
+  lookup[key]=best;
+ });
+ for(var p2=0;p2<total;p2++){
+  var q=p2*4;if(d[q+3]<8)continue;
+  var key2=((d[q]>>3)<<10)|((d[q+1]>>3)<<5)|(d[q+2]>>3),c0=palette[lookup[key2]];
+  d[q]=Math.round(c0.r);d[q+1]=Math.round(c0.g);d[q+2]=Math.round(c0.b);
+ }
+};
  var source=[
   "importScripts('https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/imagetracer_v1.2.6.js');",
   "var workerGetOptions="+workerGetOptions.toString()+";",
-  "self.onmessage=function(event){try{var p=event.data;var imageData={width:p.width,height:p.height,data:new Uint8ClampedArray(p.pixels)};var svg=ImageTracer.imagedataToSVG(imageData,workerGetOptions(p.detail,p.colors));if(!svg||svg.length<100)throw new Error('empty');self.postMessage({ok:true,svg:svg});}catch(error){self.postMessage({ok:false,error:String(error&&error.message||error)});}};"
+  "var normalizeColors="+normalizeColorsSource+";",
+  "self.onmessage=function(event){try{var p=event.data;var imageData={width:p.width,height:p.height,data:new Uint8ClampedArray(p.pixels)};if(p.normalize)normalizeColors(imageData,16);var svg=ImageTracer.imagedataToSVG(imageData,workerGetOptions(p.detail,p.colors));if(!svg||svg.length<100)throw new Error('empty');self.postMessage({ok:true,svg:svg});}catch(error){self.postMessage({ok:false,error:String(error&&error.message||error)});}};"
  ].join("\n");
  var blob=new Blob([source],{type:'text/javascript'});
  var url=URL.createObjectURL(blob);
@@ -173,7 +214,7 @@ convert.addEventListener('click',function(){
     }catch(error){setProgress(100,'progressFail',false);setStatus(t('failed'));convert.disabled=false;reset.disabled=false}
    };
    worker.onerror=function(){if(activeWorker===worker)activeWorker=null;URL.revokeObjectURL(worker._blobUrl);setProgress(100,'progressFail',false);setStatus(t('failed'));convert.disabled=false;reset.disabled=false};
-   worker.postMessage({pixels:data.data.buffer,width:outW,height:outH,detail:detail.value,colors:Number(colors.value)},[data.data.buffer]);
+   worker.postMessage({pixels:data.data.buffer,width:outW,height:outH,detail:detail.value,colors:Number(colors.value),normalize:!!(normalize&&normalize.checked)},[data.data.buffer]);
   }catch(error){
    if(worker){worker.terminate();URL.revokeObjectURL(worker._blobUrl)}
    activeWorker=null;setProgress(100,'progressFail',false);setStatus(t('failed'));convert.disabled=false;reset.disabled=false;
